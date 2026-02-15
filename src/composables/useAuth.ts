@@ -2,6 +2,8 @@ import { ref, computed } from 'vue'
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   sendEmailVerification,
   onAuthStateChanged,
@@ -15,6 +17,7 @@ const currentUser = ref<User | null>(null)
 const userProfile = ref<StudentProfile | null>(null)
 const loading = ref(true)
 const error = ref<string | null>(null)
+const googleProvider = new GoogleAuthProvider()
 
 onAuthStateChanged(auth, async (user) => {
   currentUser.value = user
@@ -23,6 +26,8 @@ onAuthStateChanged(auth, async (user) => {
     const docSnap = await getDoc(docRef)
     if (docSnap.exists()) {
       userProfile.value = docSnap.data() as StudentProfile
+    } else {
+      userProfile.value = null
     }
   } else {
     userProfile.value = null
@@ -37,19 +42,14 @@ function generateInternalEmail(username: string): string {
 }
 
 async function resolveLoginEmail(identifier: string): Promise<string> {
-  // If it looks like an email, use it directly
   if (identifier.includes('@')) {
     return identifier
   }
-
-  // Otherwise treat as username — look up the internal email
   const q = query(collection(db, 'students'), where('username', '==', identifier.toLowerCase()))
   const snap = await getDocs(q)
-
   if (snap.empty) {
     throw new Error('auth/user-not-found')
   }
-
   const profile = snap.docs[0]!.data() as StudentProfile
   return profile.internalEmail
 }
@@ -63,6 +63,65 @@ async function checkUsernameAvailable(username: string): Promise<boolean> {
 export function useAuth() {
   const isAuthenticated = computed(() => !!currentUser.value)
   const isEmailVerified = computed(() => currentUser.value?.emailVerified ?? false)
+  const needsProfile = computed(() => !!currentUser.value && !userProfile.value)
+
+  async function signInWithGoogle() {
+    error.value = null
+    try {
+      const result = await signInWithPopup(auth, googleProvider)
+      const user = result.user
+
+      // Check if profile already exists
+      const docRef = doc(db, 'students', user.uid)
+      const docSnap = await getDoc(docRef)
+
+      if (docSnap.exists()) {
+        userProfile.value = docSnap.data() as StudentProfile
+        return { success: true, needsProfile: false }
+      }
+
+      // New Google user — needs to complete profile
+      return { success: true, needsProfile: true }
+    } catch (e: any) {
+      if (e.code === 'auth/popup-closed-by-user') {
+        return { success: false }
+      }
+      error.value = friendlyError(e.code || e.message)
+      return { success: false }
+    }
+  }
+
+  async function completeGoogleProfile(age: number, grade: number, parentEmail: string | null) {
+    error.value = null
+    try {
+      const user = currentUser.value
+      if (!user) throw new Error('Not authenticated')
+
+      const isMinor = age < 13
+      const profile: StudentProfile = {
+        uid: user.uid,
+        firstName: user.displayName?.split(' ')[0] || '',
+        lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+        username: null,
+        email: user.email,
+        internalEmail: user.email || '',
+        age,
+        grade,
+        parentEmail: isMinor ? parentEmail : null,
+        parentConfirmed: !isMinor,
+        emailVerified: true,
+        requiresParentApproval: isMinor,
+        createdAt: new Date(),
+      }
+
+      await setDoc(doc(db, 'students', user.uid), profile)
+      userProfile.value = profile
+      return { success: true }
+    } catch (e: any) {
+      error.value = 'Failed to save profile. Please try again.'
+      return { success: false }
+    }
+  }
 
   async function register(form: RegistrationForm) {
     error.value = null
@@ -71,7 +130,6 @@ export function useAuth() {
       const isMinor = age < 13
       const usesUsername = form.signupMethod === 'username'
 
-      // Determine the email for Firebase Auth
       let authEmail: string
       if (usesUsername) {
         authEmail = generateInternalEmail(form.username)
@@ -79,7 +137,6 @@ export function useAuth() {
         authEmail = form.email
       }
 
-      // Check username availability if using username
       if (usesUsername) {
         const available = await checkUsernameAvailable(form.username)
         if (!available) {
@@ -90,7 +147,6 @@ export function useAuth() {
 
       const { user } = await createUserWithEmailAndPassword(auth, authEmail, form.password)
 
-      // Only send verification email if they used a real email
       if (!usesUsername) {
         await sendEmailVerification(user)
       }
@@ -152,10 +208,13 @@ export function useAuth() {
     error,
     isAuthenticated,
     isEmailVerified,
+    needsProfile,
     register,
     login,
     logout,
     resendVerification,
+    signInWithGoogle,
+    completeGoogleProfile,
     checkUsernameAvailable,
   }
 }
@@ -169,6 +228,7 @@ function friendlyError(code: string): string {
     'auth/wrong-password': 'Incorrect password. Please try again.',
     'auth/too-many-requests': 'Too many attempts. Please wait a moment and try again.',
     'auth/invalid-credential': 'Invalid email/username or password. Please try again.',
+    'auth/account-exists-with-different-credential': 'An account already exists with this email.',
   }
   return errors[code] || 'Something went wrong. Please try again.'
 }

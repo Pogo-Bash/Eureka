@@ -27,6 +27,36 @@
 
   --radius: 8px;
   --radius-lg: 12px;
+
+  /* Dark mode specific */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+[data-theme="dark"] {
+  --green-primary: #2ea86b;
+  --green-hover: #38c47d;
+  --green-light: #162e20;
+  --blue-primary: #4d8df7;
+  --blue-hover: #6da3ff;
+  --blue-light: #1a2540;
+  --coral: #ff5c4a;
+  --gold: #ffbe26;
+  --gold-light: #2a2410;
+
+  --text-primary: #e8eaed;
+  --text-secondary: #bdc1c6;
+  --text-muted: #8a8f96;
+  --bg-page: #0e1117;
+  --bg-card: #161b22;
+  --bg-input: #1c2128;
+  --border: #2d333b;
+  --border-focus: #4d8df7;
+  --error: #ff5c4a;
+  --error-bg: #2d1614;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
 }
 
 * {

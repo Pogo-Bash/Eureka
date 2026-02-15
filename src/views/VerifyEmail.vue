@@ -24,11 +24,7 @@
 
         <div class="resend-section">
           <p>Didn't get the email?</p>
-          <button
-            class="btn btn-outline"
-            @click="handleResend"
-            :disabled="resendCooldown > 0"
-          >
+          <button class="btn btn-outline" @click="handleResend" :disabled="resendCooldown > 0">
             {{ resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend verification email' }}
           </button>
         </div>
@@ -89,57 +85,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.verify-card {
-  text-align: center;
-}
-
-.verify-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.verify-card h2 {
-  margin-bottom: 0.5rem;
-}
-
-.verify-card .subtitle {
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
-}
-
-.verify-info {
-  background: var(--gold-light);
-  border-radius: var(--radius);
-  padding: 0.875rem 1rem;
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  line-height: 1.5;
-  text-align: left;
-}
-
-.resend-section {
-  margin-top: 1.25rem;
-}
-
-.resend-section p {
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-  margin-bottom: 0.5rem;
-}
-
-.btn-link {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
-  cursor: pointer;
-  margin-top: 1rem;
-  font-family: var(--font-body);
-  text-decoration: underline;
-}
-
-.btn-link:hover {
-  color: var(--text-secondary);
-}
+.verify-card { text-align: center; }
+.verify-icon { font-size: 3rem; margin-bottom: 1rem; }
+.verify-card h2 { margin-bottom: 0.5rem; }
+.verify-card .subtitle { margin-bottom: 1.5rem; line-height: 1.6; }
+.verify-info { background: var(--gold-light); border-radius: var(--radius); padding: 0.875rem 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.5; text-align: left; }
+.resend-section { margin-top: 1.25rem; }
+.resend-section p { font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+.btn-link { background: none; border: none; color: var(--text-muted); font-size: 0.8125rem; cursor: pointer; margin-top: 1rem; font-family: var(--font-body); text-decoration: underline; }
+.btn-link:hover { color: var(--text-secondary); }
 </style>

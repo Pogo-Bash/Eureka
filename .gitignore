@@ -10,3 +10,5 @@ npm-debug.log*
 .idea
 *.suo
 *.sw?
+functions/lib
+functions/node_modules
